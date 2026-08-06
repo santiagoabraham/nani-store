@@ -41,8 +41,8 @@ export default function ResetPasswordPage() {
     })
 
     ;(async () => {
+      // 1. Flujo PKCE: el token viene como ?code y se canjea.
       const code = new URLSearchParams(window.location.search).get('code')
-
       if (code) {
         const { error: exErr } = await supabase.auth.exchangeCodeForSession(code)
         if (cancelled) return
@@ -55,24 +55,40 @@ export default function ResetPasswordPage() {
         return
       }
 
-      // Flujo implícito: el token viene en el hash y supabase-js lo consume solo
-      // al instanciarse (detectSessionInUrl). Puede resolverse ANTES de que el
-      // listener de arriba esté enganchado, así que no alcanza con esperar el
-      // evento: hay que consultar getSession. Y puede tardar un instante, por
-      // eso se reintenta en vez de descartar en el primer intento.
-      for (let intento = 0; intento < 12; intento++) {
-        const { data: { session } } = await supabase.auth.getSession()
+      // 2. Flujo implícito: los tokens vienen en el hash y se instalan A MANO.
+      //
+      //    No alcanza con esperar a que supabase-js los detecte solo: el cliente
+      //    de @supabase/ssr está armado para PKCE sobre cookies y NO consume el
+      //    hash del flujo implícito. Confiar en detectSessionInUrl dejaba la
+      //    página colgada con el token entero delante y sin sesión.
+      const hash = new URLSearchParams(window.location.hash.replace(/^#/, ''))
+      const accessToken = hash.get('access_token')
+      const refreshToken = hash.get('refresh_token')
+
+      if (accessToken && refreshToken) {
+        const { error: setErr } = await supabase.auth.setSession({
+          access_token: accessToken,
+          refresh_token: refreshToken,
+        })
         if (cancelled) return
-        if (session) { setPhase('listo'); return }
-        await new Promise((r) => setTimeout(r, 250))
+        if (setErr) {
+          setError('El enlace es inválido o ya venció. Pedí uno nuevo desde el login.')
+          setPhase('invalido')
+          return
+        }
+        // Se limpia el hash para que los tokens no queden en la barra de
+        // direcciones ni en el historial del navegador.
+        window.history.replaceState(null, '', window.location.pathname)
+        setPhase('listo')
+        return
       }
 
+      // 3. Sin token en la URL: puede haber una sesión de recuperación ya activa.
+      const { data: { session } } = await supabase.auth.getSession()
       if (cancelled) return
-      setError(
-        window.location.hash.includes('access_token')
-          ? 'No se pudo validar el enlace. Pedí uno nuevo desde el login.'
-          : 'Entraste sin un enlace de recuperación válido.'
-      )
+      if (session) { setPhase('listo'); return }
+
+      setError('Entraste sin un enlace de recuperación válido.')
       setPhase('invalido')
     })()
 
