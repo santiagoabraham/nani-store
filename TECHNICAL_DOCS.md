@@ -369,6 +369,44 @@ Both are `SECURITY DEFINER` to avoid recursive RLS evaluation when policies quer
 - **Session validation:** `supabase.auth.getUser()` (validates JWT server-side on every request)
 - **Why not `getSession()`:** `getSession()` reads the local cookie only — a revoked user would still pass for the remaining JWT lifetime
 
+### Password Recovery
+
+`ForgotPassword` (on the login page) calls `resetPasswordForEmail` **from the browser**, and
+`/{tenant}/admin/reset-password` receives the token. Three things make this work, each of
+which broke it while being built:
+
+1. **The reset route is excluded from the middleware admin guard** (alongside `login`). It is
+   reached *without* a session — the token has not been redeemed when middleware runs — so
+   guarding it made the emailed link bounce to the login screen.
+
+2. **The session is installed manually, not auto-detected.** `createBrowserClient` from
+   `@supabase/ssr` is built for the PKCE-over-cookies flow and does **not** consume
+   implicit-flow tokens from the URL hash. Relying on `detectSessionInUrl` left the page
+   spinning with a perfectly valid token in the address bar. The page parses the hash and
+   calls `setSession({ access_token, refresh_token })` explicitly, then clears the hash with
+   `history.replaceState` so the tokens do not linger in the URL or browser history. The
+   `?code` (PKCE) path is still handled first, in case the project is reconfigured.
+
+3. **Redirect URLs must be allow-listed in Supabase.** Authentication → URL Configuration →
+   Redirect URLs. If the requested `redirectTo` is not on that list, Supabase silently
+   discards it and falls back to the Site URL — the link lands on `/` instead of the reset
+   page, with the token in the hash and nothing to consume it.
+
+The **built-in Supabase SMTP is capped at 2 emails/hour** and the limit is not editable.
+That is a shared pool for every auth email. Recovery is unusable in production until a custom
+SMTP provider is configured under Authentication → Emails.
+
+To issue a recovery link without sending mail (bypassing the cap), use
+`POST /auth/v1/admin/generate_link` with the service role key. `redirect_to` goes at the
+**top level** of the payload — nesting it under `options` (the JS-client shape) makes the
+REST endpoint ignore it and fall back to the Site URL.
+
+`/{tenant}/admin/login` is a Server Component that redirects to `/{tenant}/admin` when a
+valid session already exists. Without it, an authenticated admin landing on the login URL got
+the admin sidebar rendered around the login form, which looks exactly like an auth bypass.
+`reset-password` deliberately does *not* redirect that way — there, the recovery session is
+what authorises the password change.
+
 ### Storage
 
 - **Bucket name:** `products` (public bucket — images served via CDN URL)
