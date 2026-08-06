@@ -238,8 +238,15 @@ Go to **Project Settings → Environment Variables** and add:
 | `NEXT_PUBLIC_SUPABASE_URL` | From Supabase dashboard | Production, Preview, Development |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | From Supabase dashboard | Production, Preview, Development |
 | `SUPABASE_SERVICE_ROLE_KEY` | From Supabase dashboard | Production, Preview, Development |
-| `NEXT_PUBLIC_APP_URL` | Your Vercel URL (`https://your-app.vercel.app`) | Production |
 | `DEFAULT_TENANT_SLUG` | Your store slug (e.g., `my-store`) | Production, Preview, Development |
+
+Only the three Supabase variables are strictly required. `DEFAULT_TENANT_SLUG` has a fallback
+of `my-store` in `middleware.ts`, so set it explicitly only if your slug differs.
+
+There is deliberately **no base-URL variable**. MercadoPago's `back_urls` and
+`notification_url` are built from `new URL(request.url).origin`, i.e. the domain the request
+actually arrived on. Preview deployments, the production domain and a custom domain all work
+without configuration.
 
 After adding variables, trigger a new deploy from the **Deployments** tab.
 
@@ -248,8 +255,9 @@ After adding variables, trigger a new deploy from the **Deployments** tab.
 1. Go to **Project Settings → Domains**
 2. Add your domain (e.g., `mitienda.com`)
 3. Follow Vercel's DNS instructions
-4. Update `NEXT_PUBLIC_APP_URL` to your custom domain
-5. Update MercadoPago webhook URL to use the new domain
+4. Update the MercadoPago webhook URL to use the new domain
+
+No environment variable needs updating — the app follows whatever domain serves the request.
 
 ---
 
@@ -275,10 +283,9 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 
 # ── App Configuration ─────────────────────────────────────────────────────────
-# Public base URL of the app — used to build MercadoPago back_urls and notification_url
-# In development: http://localhost:3000 (use ngrok for MP webhook testing)
-# In production: https://your-app.vercel.app or your custom domain
-NEXT_PUBLIC_APP_URL=http://localhost:3000
+# There is no base-URL variable. MercadoPago back_urls and notification_url are
+# derived from new URL(request.url).origin, so the app works on localhost, on an
+# ngrok tunnel, on a Vercel preview and on a custom domain with no configuration.
 
 # Slug of the default tenant — root / and legacy routes redirect here
 # Must match a slug in the tenants table
@@ -321,12 +328,12 @@ MP webhooks require a public URL. Use [ngrok](https://ngrok.com):
 # In a separate terminal:
 ngrok http 3000
 
-# Update .env.local:
-NEXT_PUBLIC_APP_URL=https://xxxx.ngrok.io
-
 # Update the webhook URL in your MP application to:
 # https://xxxx.ngrok.io/{tenant-slug}/api/webhooks/mercadopago
 ```
+
+Nothing to change in `.env.local`: reach the app through the ngrok URL and the callbacks it
+sends to MercadoPago are built from that same host.
 
 ### Running the Type Checker
 

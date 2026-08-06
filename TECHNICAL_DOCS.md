@@ -560,8 +560,8 @@ figure could be forged to zero.
           external_reference: order.id
           items: [...lineItems, shipping as its own item if cost > 0]
           payment_methods: { installments, default_installments }
-          back_urls.success: {NEXT_PUBLIC_APP_URL}/{tenant}/checkout/success?order={id}
-          notification_url: {NEXT_PUBLIC_APP_URL}/{tenant}/api/webhooks/mercadopago
+          back_urls.success: {request origin}/{tenant}/checkout/success?order={id}
+          notification_url: {request origin}/{tenant}/api/webhooks/mercadopago
      c. Return { order, mpInitPoint: preference.init_point }
 10. Client redirects to mpInitPoint
 ```
@@ -761,7 +761,11 @@ single checkbox.
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Yes | Yes | Supabase anon key — safe to expose, enforced by RLS |
 | `SUPABASE_SERVICE_ROLE_KEY` | Yes | **No** | Bypasses RLS — server-side only, never sent to browser |
 | `DEFAULT_TENANT_SLUG` | No | No | Tenant for root `/` redirect. Defaults to `my-store` |
-| `NEXT_PUBLIC_APP_URL` | Recommended | Yes | Base URL used to build MP back_urls and notification_url |
+
+There is **no base-URL variable**. MercadoPago `back_urls` and `notification_url` come from
+`new URL(request.url).origin` in `app/[tenant]/api/orders/route.ts` — the host the request
+actually arrived on. localhost, an ngrok tunnel, a Vercel preview and a custom domain all work
+with zero configuration, and there is no stale-value failure mode.
 
 **Note:** MercadoPago credentials (`mp_access_token`, `mp_public_key`, `mp_webhook_secret`) are stored per-tenant in the `store_settings` database table. They are configured via the admin settings panel — not in `.env`.
 
