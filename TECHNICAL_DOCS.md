@@ -31,8 +31,8 @@ camisetas-carpi/
 │   ├── page.tsx                          # Redirects / → /{DEFAULT_TENANT_SLUG}
 │   ├── not-found.tsx
 │   ├── globals.css
-│   ├── (platform)/
-│   │   └── page.tsx                      # Platform landing / tenant directory
+│   ├── platform/
+│   │   └── page.tsx                      # /platform — tenant directory
 │   ├── [tenant]/                         # All tenant-scoped routes
 │   │   ├── layout.tsx                    # ONLY TenantContext — no storefront chrome
 │   │   ├── (storefront)/                 # Route group: does NOT appear in the URL
@@ -190,6 +190,19 @@ but `/{tenant}/admin` sits **outside** the group and therefore never inherits it
 Do not move `Header`/`Footer` back up into `app/[tenant]/layout.tsx`. The header is
 `position: fixed`, so putting it there renders the storefront navbar pinned over the admin
 dashboard.
+
+**Route groups do not add a URL segment.** `app/(platform)/page.tsx` resolved to `/`, exactly
+like `app/page.tsx` — two pages for one route. `next build` tolerated it locally and emitted a
+single `/`, but the Vercel build failed with:
+
+```
+ENOENT: lstat '.next/server/app/(platform)/page_client-reference-manifest.js'
+```
+
+That manifest is only emitted for pages that import at least one client component. The
+platform page was pure server-side, so it never got one, while the build still expected it for
+the grouped route. It was moved to `app/platform/` — a real segment, no collision. Before
+adding a route group, check that no other file already resolves to the same path.
 
 The header's height (`h-24`), the spacer div it renders underneath itself, and the hero's
 `h-[calc(100svh-6rem)]` are three coupled values. Changing one without the others either
