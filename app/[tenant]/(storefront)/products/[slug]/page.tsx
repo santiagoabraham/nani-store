@@ -1,5 +1,6 @@
 import { requireTenant } from '@/lib/tenant'
 import { getStorefrontProductBySlug, getStorefrontProducts } from '@/lib/db/products'
+import { getVisiblePerks } from '@/lib/db/perks'
 import { ProductDetailClient } from '@/components/products/ProductDetailClient'
 import { notFound } from 'next/navigation'
 
@@ -22,9 +23,10 @@ export default async function ProductDetailPage({ params }: Props) {
 
   // getStorefrontProductBySlug devuelve null si el producto está sin stock,
   // así que sacarlo del stock desde el panel también mata su link directo.
-  const [product, allProducts] = await Promise.all([
+  const [product, allProducts, perks] = await Promise.all([
     getStorefrontProductBySlug(params.slug, tenant.id),
     getStorefrontProducts(tenant.id),
+    getVisiblePerks(tenant.id, 'product'),
   ])
 
   if (!product) notFound()
@@ -38,6 +40,7 @@ export default async function ProductDetailPage({ params }: Props) {
       product={product}
       related={related}
       tenantSlug={params.tenant}
+      perks={perks}
     />
   )
 }

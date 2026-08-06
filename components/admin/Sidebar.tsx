@@ -5,7 +5,7 @@ import { usePathname } from 'next/navigation'
 import { logoutAdmin } from '@/lib/auth/adminAuth'
 import {
   LayoutDashboard, Shirt, ShoppingBag, Tag, Layers, Package,
-  Settings, BarChart2, LogOut, FolderOpen,
+  Settings, BarChart2, LogOut, FolderOpen, LayoutTemplate,
 } from 'lucide-react'
 
 interface Props {
@@ -24,6 +24,7 @@ export function Sidebar({ tenantSlug, adminEmail }: Props) {
     { href: `${base}/orders`,       label: 'Pedidos',    icon: ShoppingBag },
     { href: `${base}/dispatch`,     label: 'Por despachar', icon: Package },
     { href: `${base}/coupons`,      label: 'Cupones',    icon: Tag },
+    { href: `${base}/content`,      label: 'Contenido',  icon: LayoutTemplate },
     { href: `${base}/settings`,     label: 'Configuración', icon: Settings },
     { href: `${base}/analytics`,    label: 'Analytics',  icon: BarChart2 },
   ]

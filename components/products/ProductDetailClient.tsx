@@ -4,9 +4,10 @@ import { useState, useEffect } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { ShoppingCart, Heart, Share2, ChevronRight, CheckCircle, ChevronDown, ChevronUp, Truck, Shield, RotateCcw, ImageOff, CreditCard, Banknote } from 'lucide-react'
-import { Product, Size, JerseyVersion } from '@/types'
+import { Product, Size, JerseyVersion, StorePerk } from '@/types'
 import { useCart } from '@/store/cartStore'
 import { useTenant } from '@/context/TenantContext'
+import { iconFor } from '@/lib/icons'
 import { paymentTerms, cashPrice, installmentAmount } from '@/lib/pricing'
 import { formatPriceARS } from '@/lib/utils'
 import { track } from '@/lib/analytics'
@@ -26,9 +27,11 @@ interface ProductDetailClientProps {
   product: Product
   related: Product[]
   tenantSlug: string
+  /** Bloques de confianza editables desde el panel. */
+  perks: StorePerk[]
 }
 
-export function ProductDetailClient({ product, related, tenantSlug }: ProductDetailClientProps) {
+export function ProductDetailClient({ product, related, tenantSlug, perks }: ProductDetailClientProps) {
   const { addItem } = useCart()
   const { settings } = useTenant()
   const [selectedImage, setSelectedImage] = useState(0)
@@ -270,20 +273,29 @@ export function ProductDetailClient({ product, related, tenantSlug }: ProductDet
               </button>
             </div>
 
-            {/* Trust badges */}
-            <div className="grid grid-cols-3 gap-3 mb-8">
-              {[
-                { icon: Truck, label: 'Envío a todo el país', sub: 'Correo Argentino' },
-                { icon: Shield, label: 'Autenticidad', sub: 'Garantizada' },
-                { icon: RotateCcw, label: 'Devolución', sub: '30 días gratis' },
-              ].map(({ icon: Icon, label, sub }) => (
-                <div key={label} className="flex flex-col items-center text-center p-3 bg-carpi-gray">
-                  <Icon size={18} className="text-carpi-red mb-1" />
-                  <p className="font-heading text-xs tracking-wider text-carpi-ink">{label}</p>
-                  <p className="font-body text-xs text-gray-400">{sub}</p>
-                </div>
-              ))}
-            </div>
+            {/* Bloques de confianza — editables desde Contenido en el panel.
+                La grilla sigue la cantidad real para que dos bloques no dejen
+                una columna vacía, y si no hay ninguno la sección no se dibuja. */}
+            {perks.length > 0 && (
+              <div className={`grid gap-3 mb-8 ${
+                perks.length === 1 ? 'grid-cols-1'
+                  : perks.length === 2 ? 'grid-cols-2'
+                  : 'grid-cols-3'
+              }`}>
+                {perks.map((perk) => {
+                  const Icon = iconFor(perk.icon)
+                  return (
+                    <div key={perk.id} className="flex flex-col items-center text-center p-3 bg-carpi-gray">
+                      <Icon size={18} className="text-carpi-red mb-1" />
+                      <p className="font-heading text-xs tracking-wider text-carpi-ink">{perk.label}</p>
+                      {perk.sublabel && (
+                        <p className="font-body text-xs text-gray-400">{perk.sublabel}</p>
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
+            )}
 
             {/* Acordeones */}
             <div className="border-t border-gray-100">
@@ -331,7 +343,9 @@ export function ProductDetailClient({ product, related, tenantSlug }: ProductDet
                     <strong>{formatPriceARS(Number(settings.ship_branch_rest))}</strong>
                   </p>
                   <p>✓ Envíos por Correo Argentino con número de seguimiento</p>
-                  <p>✓ Devoluciones gratis dentro de los <strong>30 días</strong></p>
+                  {/* La política de devoluciones sale de Configuración. Si está
+                      vacía no se muestra: no se promete lo que no se definió. */}
+                  {settings.returns_note && <p>✓ {settings.returns_note}</p>}
                 </div>
               )}
             </div>

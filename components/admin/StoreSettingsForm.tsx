@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from 'react'
 import { StoreSettings } from '@/types'
+import { CarouselImagesField } from '@/components/admin/CarouselImagesField'
 import { Check } from 'lucide-react'
 
 interface Props {
@@ -47,6 +48,11 @@ export function StoreSettingsForm({ tenantSlug, initialSettings }: Props) {
           ship_branch_caba: Number(settings.ship_branch_caba) || 0,
           ship_home_rest: Number(settings.ship_home_rest) || 0,
           ship_branch_rest: Number(settings.ship_branch_rest) || 0,
+          carousel_images: settings.carousel_images ?? [],
+          // Vacío se guarda como null: el newsletter interpreta null como
+          // "no anunciar ningún cupón".
+          newsletter_coupon_code: settings.newsletter_coupon_code?.trim() || null,
+          returns_note: settings.returns_note ?? '',
         },
       }
 
@@ -171,12 +177,30 @@ export function StoreSettingsForm({ tenantSlug, initialSettings }: Props) {
         {field('hero_subtitle', 'Subtítulo')}
         {field('hero_cta', 'Botón principal')}
         {field('hero_secondary', 'Botón secundario')}
+        <CarouselImagesField
+          images={settings.carousel_images ?? []}
+          onChange={(imgs) => setSettings((s) => ({ ...s, carousel_images: imgs }))}
+        />
       </section>
 
       <section className="space-y-4">
         <h2 className="font-heading text-xl tracking-wider text-gray-700 border-b border-gray-100 pb-2">NEWSLETTER</h2>
         {field('newsletter_title', 'Título')}
         {field('newsletter_subtitle', 'Subtítulo')}
+        {field('newsletter_coupon_code', 'Cupón que se anuncia (vacío = ninguno)')}
+        <p className="font-body text-xs text-amber-600 bg-amber-50 border border-amber-200 px-3 py-2">
+          El código que pongas acá se le promete a quien se suscriba. Asegurate de que
+          exista y esté activo en la sección Cupones, o dejalo vacío.
+        </p>
+      </section>
+
+      <section className="space-y-4">
+        <h2 className="font-heading text-xl tracking-wider text-gray-700 border-b border-gray-100 pb-2">POLÍTICAS</h2>
+        {field('returns_note', 'Devoluciones (vacío = no se menciona)')}
+        <p className="font-body text-xs text-gray-400">
+          Aparece en el desplegable “Envíos y devoluciones” de cada producto. Los bloques
+          de beneficios de la portada y de la ficha se editan en la sección Contenido.
+        </p>
       </section>
 
       <section className="space-y-4">

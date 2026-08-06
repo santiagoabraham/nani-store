@@ -8,6 +8,7 @@ interface Props { settings: StoreSettings }
 export function Newsletter({ settings }: Props) {
   const newsletterTitle = settings.newsletter_title
   const newsletterSubtitle = settings.newsletter_subtitle
+  const couponCode = settings.newsletter_coupon_code?.trim() || null
   const [email, setEmail] = useState('')
   const [submitted, setSubmitted] = useState(false)
 
@@ -31,8 +32,17 @@ export function Newsletter({ settings }: Props) {
 
         {submitted ? (
           <div className="bg-white/20 border border-white/30 px-6 py-4 text-white font-body">
-            ¡Gracias! Te enviamos tu cupón a tu email.{' '}
-            <span className="font-heading tracking-wider">Código: BIENVENIDO</span>
+            {/* El cupón se anuncia sólo si hay uno configurado y existe de verdad.
+                Antes se prometía "BIENVENIDO" fijo, que no estaba dado de alta:
+                quien lo intentaba se lo encontraba rechazado en el checkout. */}
+            {couponCode ? (
+              <>
+                ¡Gracias! Usá este código en tu compra:{' '}
+                <span className="font-heading tracking-wider">{couponCode}</span>
+              </>
+            ) : (
+              <>¡Gracias por suscribirte!</>
+            )}
           </div>
         ) : (
           <>
@@ -52,9 +62,11 @@ export function Newsletter({ settings }: Props) {
                 SUSCRIBIRME
               </button>
             </form>
-            <p className="font-body text-xs text-white/60 mt-3">
-              Cupón <strong>BIENVENIDO</strong> disponible al suscribirte
-            </p>
+            {couponCode && (
+              <p className="font-body text-xs text-white/60 mt-3">
+                Cupón <strong>{couponCode}</strong> disponible al suscribirte
+              </p>
+            )}
           </>
         )}
       </div>

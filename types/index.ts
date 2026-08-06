@@ -115,6 +115,34 @@ export interface StoreSettings {
   ship_branch_caba: number
   ship_home_rest: number
   ship_branch_rest: number
+
+  // ── Contenido editable ──
+  /** Cupón que anuncia el newsletter. null = no anuncia ninguno. */
+  newsletter_coupon_code: string | null
+  /** Política de devoluciones en la ficha de producto. Vacío = no se muestra. */
+  returns_note: string
+}
+
+/** Bloque de beneficio editable. `location` define dónde se muestra. */
+export interface StorePerk {
+  id: string
+  tenant_id: string
+  location: 'home' | 'product'
+  /** Nombre del ícono — se resuelve con iconFor() de lib/icons.ts */
+  icon: string
+  label: string
+  sublabel: string
+  visible: boolean
+  sort_order: number
+}
+
+export interface PerkPayload {
+  location?: 'home' | 'product'
+  icon?: string
+  label?: string
+  sublabel?: string
+  visible?: boolean
+  sort_order?: number
 }
 
 export interface TenantContextValue {
