@@ -1,8 +1,10 @@
 'use client'
 
+import { useState } from 'react'
 import { useFormState, useFormStatus } from 'react-dom'
 import { loginAdmin } from '@/lib/auth/adminAuth'
 import { useTenant } from '@/context/TenantContext'
+import { ForgotPassword } from '@/components/admin/ForgotPassword'
 import { AlertCircle, Lock } from 'lucide-react'
 
 function SubmitButton() {
@@ -21,6 +23,9 @@ function SubmitButton() {
 
 export default function AdminLoginPage() {
   const { tenant, settings } = useTenant()
+  // Se espeja el email tipeado para poder pasarlo al pedido de recuperación
+  // y no obligar a escribirlo de nuevo.
+  const [email, setEmail] = useState('')
 
   const boundLogin = loginAdmin.bind(null, tenant.slug)
   const [state, action] = useFormState(boundLogin, { error: '' })
@@ -43,6 +48,8 @@ export default function AdminLoginPage() {
               type="email"
               autoComplete="email"
               required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
               className="w-full bg-white/10 border border-white/20 text-white placeholder-white/30 px-4 py-3 font-body text-sm focus:outline-none focus:border-[#029CDC] transition-colors"
             />
           </div>
@@ -69,6 +76,10 @@ export default function AdminLoginPage() {
 
           <SubmitButton />
         </form>
+
+        <div className="mt-5">
+          <ForgotPassword tenantSlug={tenant.slug} defaultEmail={email} />
+        </div>
       </div>
     </div>
   )

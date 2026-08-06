@@ -26,8 +26,14 @@ export async function middleware(request: NextRequest) {
   }
 
   // 2. For [tenant]/admin routes: verify Supabase session
-  //    Pattern: /{tenant}/admin/** (but NOT /{tenant}/admin/login)
-  const adminMatch = pathname.match(/^\/([^/]+)\/admin(\/(?!login).+)?$/)
+  //    Pattern: /{tenant}/admin/** (but NOT /{tenant}/admin/login
+  //    ni /{tenant}/admin/reset-password)
+  //
+  //    reset-password queda afuera a propósito: se llega desde el mail de
+  //    recuperación SIN sesión — el token todavía no se canjeó cuando corre
+  //    el middleware. Si lo protegiéramos, el link del mail rebotaría al
+  //    login y la recuperación sería imposible.
+  const adminMatch = pathname.match(/^\/([^/]+)\/admin(\/(?!login|reset-password).+)?$/)
   if (adminMatch) {
     const tenantSlug = adminMatch[1]
     let response = NextResponse.next({ request: { headers: request.headers } })
