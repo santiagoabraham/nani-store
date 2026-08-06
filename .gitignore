@@ -1,0 +1,49 @@
+# ============================================================
+# Secretos — NUNCA versionar
+# ============================================================
+# .env.local tiene la service role key de Supabase, que bypasea
+# RLS y da acceso total a los datos de clientes.
+.env
+.env.local
+.env*.local
+.env.production
+
+# ============================================================
+# Dependencias y build
+# ============================================================
+/node_modules
+/.pnp
+.pnp.js
+/.next/
+/out/
+/build
+*.tsbuildinfo
+next-env.d.ts
+
+# ============================================================
+# Testing y cobertura
+# ============================================================
+/coverage
+
+# ============================================================
+# Deploy
+# ============================================================
+.vercel
+
+# ============================================================
+# Logs
+# ============================================================
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# ============================================================
+# Sistema operativo y editores
+# ============================================================
+.DS_Store
+Thumbs.db
+*.pem
+.idea/
+.vscode/*
+!.vscode/extensions.json
