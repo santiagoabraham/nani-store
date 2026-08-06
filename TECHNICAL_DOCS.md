@@ -743,6 +743,52 @@ Because that layout wraps the admin panel too, admin client components can also 
 
 ---
 
+## 9a. Editable Content
+
+**Principle: nothing the customer reads may live in a component.** Text, images, icons and
+ordering belong in the database and are edited from the admin panel. A hardcoded array in a
+storefront component is debt from day one.
+
+This is not only about convenience. The storefront was advertising *free shipping*, *30-day
+returns*, *24/7 support* and a `BIENVENIDO` coupon — none of which the owner had configured,
+and the coupon did not exist in the `coupons` table at all, so anyone who tried it was
+rejected at checkout. The app was making commercial promises on the owner's behalf.
+
+### Perks (`store_perks`)
+
+| Column | Notes |
+|--------|-------|
+| `location` | `home` (bar under the hero) or `product` (trust badges on the detail page) |
+| `icon` | Icon **name**, resolved through `lib/icons.ts` |
+| `label` / `sublabel` | Free text |
+| `visible` | Hidden keeps the row and its text; the storefront query filters on it |
+| `sort_order` | Reordered with arrows in the panel |
+
+One table serves both placements — `location` is the discriminator. Managed under
+**Contenido** in the admin sidebar.
+
+**Icons are a curated registry, not all of lucide-react.** `lib/icons.ts` maps ~24 names to
+components. Dynamically importing the whole icon library would ship hundreds of kB to the
+client for icons nobody uses. Adding one is a single line; `iconFor()` falls back to a default
+so a stale name in the database never crashes a page.
+
+**Responsive is a rendering concern, not a data one.** Both placements size their grid from
+the actual number of visible perks (1/2/3/4 columns), and a placement with none renders
+*nothing at all* rather than an empty strip. That is what makes deleting a block safe.
+
+### Other settings-driven content
+
+| Field | Replaces |
+|-------|----------|
+| `carousel_images` | Hero slides. The column always existed; Tanda 1 added the upload/reorder UI |
+| `newsletter_coupon_code` | The hardcoded `BIENVENIDO`. `null` ⇒ the newsletter promises no coupon |
+| `returns_note` | "Devoluciones gratis dentro de los 30 días". Empty ⇒ the line is not rendered |
+
+Anything that reads as a commercial commitment must come from configuration, and must
+degrade to *silence* when unset — never to a default promise.
+
+---
+
 ## 9b. Catalog Model
 
 A product is classified along three independent axes. They are not interchangeable:
